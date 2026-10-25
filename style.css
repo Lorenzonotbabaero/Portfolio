@@ -345,4 +345,4 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
 .msg-link:hover { transform: scale(1.04); box-shadow: 0 0 22px rgba(255, 31, 61, 0.55); }
 
 @keyframes avspin { to { transform: rotate(360deg); } }
-                                           
+     
