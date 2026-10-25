@@ -166,7 +166,7 @@ document.querySelectorAll(".tilt").forEach((card) => {
 })();
 
 
-/* ---------- Chat (DM style contact) ---------- */
+/* ---------- Chat (DM style contact, answers come from response.json) ---------- */
 (function () {
   const IG_DM = "https://ig.me/m/lor.zxa";
   const body = document.getElementById("chatBody");
@@ -174,6 +174,28 @@ document.querySelectorAll(".tilt").forEach((card) => {
   const input = document.getElementById("chatInput");
   const chips = document.getElementById("chips");
   if (!body || !form) return;
+
+  /* Used only if response.json cannot be loaded */
+  let data = {
+    welcome: [
+      "Good day! Thank you for visiting my portfolio.",
+      "Please feel free to send me a message regarding collaboration or any inquiries."
+    ],
+    rules: [
+      { keywords: ["hi", "hello", "hey", "good day"], replies: ["Good day to you as well! 😊", "How may I help you today?"] },
+      { keywords: ["work with", "work together", "collab*", "hire*", "project*"], replies: ["Thank you for your interest in working with me!", "Please send me the details on Instagram, and I will reply as soon as I can."], action: "copy_ig" },
+      { keywords: ["question*", "inquir*", "ask"], replies: ["Of course, feel free to ask.", "Type your question below."] }
+    ],
+    fallback: {
+      replies: ["Thank you for your message.", "Please tap the button below and send it to me on Instagram."],
+      action: "copy_ig"
+    }
+  };
+
+  const ready = fetch("response.json?v=" + Date.now(), { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : Promise.reject()))
+    .then((j) => { if (j && Array.isArray(j.rules)) data = j; })
+    .catch(() => {});
 
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const scrollDown = () => { body.scrollTop = body.scrollHeight; };
@@ -186,23 +208,15 @@ document.querySelectorAll(".tilt").forEach((card) => {
     scrollDown();
   }
 
-  async function botSay(text, delay = 900) {
+  async function botSay(text) {
     const t = document.createElement("div");
     t.className = "msg them typing";
     t.innerHTML = "<i></i><i></i><i></i>";
     body.appendChild(t);
     scrollDown();
-    await wait(delay);
+    await wait(Math.min(1500, 550 + text.length * 14));
     t.remove();
     bubble(text, "them");
-  }
-
-  let greeted = false;
-  async function greet() {
-    if (greeted) return;
-    greeted = true;
-    await botSay("Good day! Thank you for visiting my portfolio.", 700);
-    await botSay("Please feel free to send me a message regarding collaboration or any inquiries.", 1100);
   }
 
   async function copyText(text) {
@@ -230,60 +244,66 @@ document.querySelectorAll(".tilt").forEach((card) => {
     scrollDown();
   }
 
+  /* ---- keyword matching ---- */
+  const normalize = (s) =>
+    " " + s.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").replace(/\s+/g, " ").trim() + " ";
+
+  const esc = (s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+
+  function keywordScore(text, kw) {
+    kw = kw.toLowerCase().trim();
+    if (!kw) return 0;
+    const pattern = esc(kw).replace(/\*/g, "\\p{L}*");
+    const re = new RegExp("\\s" + pattern + "\\s", "u");
+    if (!re.test(text)) return 0;
+    return kw.split(/\s+/).length * 10 + Math.min(kw.length, 9);
+  }
+
+  function findReply(message) {
+    const text = normalize(message);
+    let best = null, bestScore = 0;
+    for (const rule of data.rules) {
+      let score = 0;
+      for (const kw of rule.keywords || []) score += keywordScore(text, kw);
+      if (score > bestScore) { best = rule; bestScore = score; }
+    }
+    return best || data.fallback;
+  }
+
   let busy = false;
-  async function send(text) {
-    text = text.trim();
-    if (!text || busy) return;
+  async function send(message) {
+    message = message.trim();
+    if (!message || busy) return;
     busy = true;
-    bubble(text, "me");
+    bubble(message, "me");
     input.value = "";
-    const copied = await copyText(text);
-    await botSay("Thank you for your message.", 800);
-    await botSay(copied
-      ? "Your message has been copied. Please tap the button below, then paste and send it to me on Instagram."
-      : "Please tap the button below to open my Instagram direct messages and send your message there.", 1000);
-    igLink();
+    const rule = findReply(message);
+    const copyPromise = rule.action === "copy_ig" ? copyText(message) : null;
+    for (const line of rule.replies || []) await botSay(line);
+    if (copyPromise) {
+      const ok = await copyPromise;
+      if (ok) await botSay("Your message has been copied. Please paste it after opening my Instagram DM.");
+    }
+    if (rule.action === "ig" || rule.action === "copy_ig") igLink();
     busy = false;
   }
 
   form.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
-  const replies = {
-    hi: { texts: ["Good day to you as well! 😊", "How may I help you today?"] },
-    work: {
-      texts: [
-        "Thank you for your interest in working with me!",
-        "I'm open to collaborations and projects. Please send me the details on Instagram, and I will reply as soon as I can."
-      ],
-      ig: true
-    },
-    ask: {
-      texts: [
-        "Of course, feel free to ask.",
-        "Type your question below, and I will get back to you as soon as possible."
-      ],
-      focus: true
-    }
-  };
-
-  async function chipReply(btn) {
-    if (busy) return;
-    const r = replies[btn.dataset.key];
-    if (!r) return send(btn.dataset.msg);
-    busy = true;
-    bubble(btn.dataset.msg, "me");
-    for (const t of r.texts) await botSay(t, 900);
-    if (r.ig) igLink();
-    if (r.focus) input.focus({ preventScroll: true });
-    busy = false;
-  }
-
   chips.addEventListener("click", (e) => {
     const b = e.target.closest("button");
-    if (b) chipReply(b);
+    if (b) send(b.dataset.msg || b.textContent);
   });
+
+  let greeted = false;
+  async function greet() {
+    if (greeted) return;
+    greeted = true;
+    await ready;
+    for (const line of data.welcome || []) await botSay(line);
+  }
 
   new IntersectionObserver((entries, io) => {
     if (entries.some((e) => e.isIntersecting)) { greet(); io.disconnect(); }
   }, { threshold: 0.3 }).observe(body);
 })();
-       
+     
