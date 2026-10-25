@@ -34,10 +34,17 @@ a { color: inherit; text-decoration: none; }
 @keyframes shine { to { background-position: 200% center; } }
 
 /* ---------- Background ---------- */
+.bg-video { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; pointer-events: none; }
+.bg-overlay {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 30%, rgba(11, 2, 6, 0.35), rgba(11, 2, 6, 0.85)),
+    linear-gradient(rgba(11, 2, 6, 0.45), rgba(11, 2, 6, 0.7));
+}
 #particles { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 
 .blobs { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-.blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.45; }
+.blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.22; }
 .b1 { width: 420px; height: 420px; background: var(--p1); top: -120px; left: -100px; animation: float1 18s ease-in-out infinite; }
 .b2 { width: 380px; height: 380px; background: var(--p2); bottom: -140px; right: -100px; animation: float2 22s ease-in-out infinite; }
 .b3 { width: 300px; height: 300px; background: var(--p3); top: 40%; left: 55%; opacity: 0.25; animation: float3 26s ease-in-out infinite; }
@@ -61,7 +68,8 @@ a { color: inherit; text-decoration: none; }
 .splash {
   position: fixed; inset: 0; z-index: 100; overflow: hidden;
   display: grid; place-items: center; text-align: center;
-  background: radial-gradient(ellipse at 50% 45%, #1c0509 0%, #0b0206 62%, #050102 100%);
+  background: radial-gradient(ellipse at 50% 45%, rgba(28, 5, 9, 0.72) 0%, rgba(11, 2, 6, 0.86) 62%, rgba(5, 1, 2, 0.94) 100%);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
   transition: opacity 0.9s ease, visibility 0.9s ease, transform 0.9s ease;
 }
 .splash.hide { opacity: 0; visibility: hidden; transform: scale(1.06); }
@@ -244,4 +252,4 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
   }
-        
+  
