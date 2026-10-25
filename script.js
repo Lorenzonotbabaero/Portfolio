@@ -164,4 +164,70 @@ document.querySelectorAll(".tilt").forEach((card) => {
   }
   frame();
 })();
-     
+
+
+/* ---------- Chat (DM style contact) ---------- */
+(function () {
+  const EMAIL = "badillalorenzo20@gmail.com";
+  const body = document.getElementById("chatBody");
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("chatInput");
+  const chips = document.getElementById("chips");
+  if (!body || !form) return;
+
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const scrollDown = () => { body.scrollTop = body.scrollHeight; };
+
+  function bubble(text, who) {
+    const el = document.createElement("div");
+    el.className = "msg " + who;
+    el.textContent = text;
+    body.appendChild(el);
+    scrollDown();
+  }
+
+  async function botSay(text, delay = 900) {
+    const t = document.createElement("div");
+    t.className = "msg them typing";
+    t.innerHTML = "<i></i><i></i><i></i>";
+    body.appendChild(t);
+    scrollDown();
+    await wait(delay);
+    t.remove();
+    bubble(text, "them");
+  }
+
+  let greeted = false;
+  async function greet() {
+    if (greeted) return;
+    greeted = true;
+    await botSay("Hey! 👋 Thanks for stopping by.", 700);
+    await botSay("Want to work together or just say hi? Send me a message here.", 1100);
+  }
+
+  let busy = false;
+  async function send(text) {
+    text = text.trim();
+    if (!text || busy) return;
+    busy = true;
+    bubble(text, "me");
+    input.value = "";
+    await botSay("Got it! Opening your email app so you can send it to me. 📩", 1000);
+    await botSay("If nothing opens, tap the Instagram icon on top to DM me instead.", 900);
+    const subject = encodeURIComponent("Message from your portfolio");
+    const mail = encodeURIComponent(text);
+    window.location.href = "mailto:" + EMAIL + "?subject=" + subject + "&body=" + mail;
+    busy = false;
+  }
+
+  form.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
+  chips.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (b) send(b.dataset.msg);
+  });
+
+  new IntersectionObserver((entries, io) => {
+    if (entries.some((e) => e.isIntersecting)) { greet(); io.disconnect(); }
+  }, { threshold: 0.3 }).observe(body);
+})();
+   
