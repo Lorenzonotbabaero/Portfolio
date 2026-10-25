@@ -168,7 +168,7 @@ document.querySelectorAll(".tilt").forEach((card) => {
 
 /* ---------- Chat (DM style contact) ---------- */
 (function () {
-  const EMAIL = "badillalorenzo20@gmail.com";
+  const IG_DM = "https://ig.me/m/lor.zxa";
   const body = document.getElementById("chatBody");
   const form = document.getElementById("chatForm");
   const input = document.getElementById("chatInput");
@@ -201,8 +201,33 @@ document.querySelectorAll(".tilt").forEach((card) => {
   async function greet() {
     if (greeted) return;
     greeted = true;
-    await botSay("Hey! 👋 Thanks for stopping by.", 700);
-    await botSay("Want to work together or just say hi? Send me a message here.", 1100);
+    await botSay("Good day! Thank you for visiting my portfolio.", 700);
+    await botSay("Please feel free to send me a message regarding collaboration or any inquiries.", 1100);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        return ok;
+      } catch (e) { return false; }
+    }
+  }
+
+  function igLink() {
+    const a = document.createElement("a");
+    a.className = "msg them msg-link";
+    a.href = IG_DM; a.target = "_blank"; a.rel = "noopener";
+    a.innerHTML = '<i class="fa-brands fa-instagram"></i> Open Instagram DM';
+    body.appendChild(a);
+    scrollDown();
   }
 
   let busy = false;
@@ -212,11 +237,12 @@ document.querySelectorAll(".tilt").forEach((card) => {
     busy = true;
     bubble(text, "me");
     input.value = "";
-    await botSay("Got it! Opening your email app so you can send it to me. 📩", 1000);
-    await botSay("If nothing opens, tap the Instagram icon on top to DM me instead.", 900);
-    const subject = encodeURIComponent("Message from your portfolio");
-    const mail = encodeURIComponent(text);
-    window.location.href = "mailto:" + EMAIL + "?subject=" + subject + "&body=" + mail;
+    const copied = await copyText(text);
+    await botSay("Thank you for your message.", 800);
+    await botSay(copied
+      ? "Your message has been copied. Please tap the button below, then paste and send it to me on Instagram."
+      : "Please tap the button below to open my Instagram direct messages and send your message there.", 1000);
+    igLink();
     busy = false;
   }
 
@@ -230,4 +256,3 @@ document.querySelectorAll(".tilt").forEach((card) => {
     if (entries.some((e) => e.isIntersecting)) { greet(); io.disconnect(); }
   }, { threshold: 0.3 }).observe(body);
 })();
-   
