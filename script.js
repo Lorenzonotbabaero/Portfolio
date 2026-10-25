@@ -247,12 +247,43 @@ document.querySelectorAll(".tilt").forEach((card) => {
   }
 
   form.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
+  const replies = {
+    hi: { texts: ["Good day to you as well! 😊", "How may I help you today?"] },
+    work: {
+      texts: [
+        "Thank you for your interest in working with me!",
+        "I'm open to collaborations and projects. Please send me the details on Instagram, and I will reply as soon as I can."
+      ],
+      ig: true
+    },
+    ask: {
+      texts: [
+        "Of course, feel free to ask.",
+        "Type your question below, and I will get back to you as soon as possible."
+      ],
+      focus: true
+    }
+  };
+
+  async function chipReply(btn) {
+    if (busy) return;
+    const r = replies[btn.dataset.key];
+    if (!r) return send(btn.dataset.msg);
+    busy = true;
+    bubble(btn.dataset.msg, "me");
+    for (const t of r.texts) await botSay(t, 900);
+    if (r.ig) igLink();
+    if (r.focus) input.focus({ preventScroll: true });
+    busy = false;
+  }
+
   chips.addEventListener("click", (e) => {
     const b = e.target.closest("button");
-    if (b) send(b.dataset.msg);
+    if (b) chipReply(b);
   });
 
   new IntersectionObserver((entries, io) => {
     if (entries.some((e) => e.isIntersecting)) { greet(); io.disconnect(); }
   }, { threshold: 0.3 }).observe(body);
 })();
+       
