@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;500&family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
 
@@ -128,11 +128,37 @@
 
     <section id="contact">
       <h2 class="reveal">Let's <span class="grad">talk</span></h2>
-      <div class="glass contact-card reveal">
-        <p>Want to work together? Reach out.</p>
-        <a class="mail" href="mailto:badillalorenzo20@gmail.com">badillalorenzo20@gmail.com</a>
-        <a class="btn btn-outline" href="https://github.com/Lorenzonotbabaero" target="_blank" rel="noopener">GitHub</a>
+      <div class="glass chat reveal">
+        <div class="chat-head">
+          <div class="avatar">
+            <span>LB</span>
+            <img src="Files/SoundS/Pic.jpeg" alt="" onerror="this.remove()" />
+            <i class="dot"></i>
+          </div>
+          <div class="who">
+            <b>Lorenzo Badilla</b>
+            <small>Active now</small>
+          </div>
+          <a class="chat-ig" href="https://ig.me/m/lor.zxa" target="_blank" rel="noopener" aria-label="Message me on Instagram" title="DM me on Instagram">
+            <i class="fa-brands fa-instagram"></i>
+          </a>
+        </div>
+        <div class="chat-body" id="chatBody" aria-live="polite"></div>
+        <div class="chips" id="chips">
+          <button type="button" data-msg="Hi Lorenzo! 👋">Hi! 👋</button>
+          <button type="button" data-msg="I'd like to work with you.">Let's work together</button>
+          <button type="button" data-msg="I have a question for you.">I have a question</button>
+        </div>
+        <form class="chat-form" id="chatForm">
+          <input id="chatInput" type="text" placeholder="Message..." autocomplete="off" maxlength="500" aria-label="Your message" />
+          <button type="submit" aria-label="Send"><i class="fa-solid fa-paper-plane"></i></button>
+        </form>
       </div>
+      <p class="contact-links reveal">
+        <a href="mailto:badillalorenzo20@gmail.com">badillalorenzo20@gmail.com</a>
+        <span>·</span>
+        <a href="https://github.com/Lorenzonotbabaero" target="_blank" rel="noopener">GitHub</a>
+      </p>
     </section>
   </main>
 
@@ -140,7 +166,7 @@
     <p>© 2026 Lorenzo Badilla</p>
   </footer>
 
-  <script src="script.js?v=7"></script>
+  <script src="script.js?v=9"></script>
 </body>
-        </html>
+  </html>
             
