@@ -4,7 +4,7 @@
    Example: if your file is "lofi.mp3" ->  "Files/SoundS/lofi.mp3"
    NOTE: Render is case-sensitive, so "SoundS" must match exactly.
    ============================================================ */
-const MUSIC_SRC = "Files/SoundS/music.mp3";
+const MUSIC_SRC = "Files/SoundS/Background.mp3";
 const MUSIC_VOLUME = 0.5; // 0 to 1
 
 const roles = [
