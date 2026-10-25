@@ -269,13 +269,7 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
 .avatar .ph { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: #0b0206; box-shadow: inset 0 0 0 2px #0b0206; }
 .avatar img {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: contain; object-position: center;
-  filter: grayscale(1) contrast(1.1) brightness(1.7);
-}
-.avatar::after {
-  content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; z-index: 1;
-  background: conic-gradient(from 0deg, #ff4a5c, #b0001e, #5a000f, #b0001e, #ff4a5c);
-  mix-blend-mode: multiply; animation: avspin 5s linear infinite;
+  object-fit: cover; object-position: 12% 40%;
 }
 .avatar .dot {
   position: absolute; right: -1px; bottom: -1px; width: 13px; height: 13px; border-radius: 50%;
