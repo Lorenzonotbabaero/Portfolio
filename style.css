@@ -193,6 +193,7 @@ h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; margin-bottom: 1.5
 }
 .about-card { padding: 1.8rem; }
 .about-card p { color: #f0dede; font-size: 1.05rem; }
+.about-card p + p { margin-top: 1rem; }
 
 .skills { list-style: none; display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.4rem; }
 .skills li {
@@ -245,5 +246,4 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
-        }
-  
+}
