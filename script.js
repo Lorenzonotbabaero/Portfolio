@@ -15,6 +15,7 @@ const roles = [
 ];
 
 /* ---------- Music + splash ---------- */
+const bgv = document.getElementById("bgv");
 const bgm = document.getElementById("bgm");
 const musicBtn = document.getElementById("musicBtn");
 const splash = document.getElementById("splash");
@@ -29,7 +30,10 @@ function setPlaying(on) {
   musicBtn.classList.toggle("muted", !on);
 }
 
+if (bgv) bgv.play().catch(() => {});
+
 enterBtn.addEventListener("click", () => {
+  if (bgv) bgv.play().catch(() => {});
   bgm.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
   splash.classList.add("hide");
   document.body.classList.remove("locked");
