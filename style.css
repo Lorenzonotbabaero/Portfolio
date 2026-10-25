@@ -219,12 +219,10 @@ h2 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; margin-bottom: 1.5
 .go { display: inline-block; margin-top: 1rem; color: var(--p3); font-weight: 600; position: relative; transition: transform 0.25s; }
 .card:hover .go { transform: translateX(6px); }
 
-.icon { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; color: #fff; position: relative; }
+.icon { display: block; color: var(--text); position: relative; line-height: 1; }
 .icon svg { width: 26px; height: 26px; }
-.icon i { font-size: 1.7rem; line-height: 1; }
-.icon.fb { background: linear-gradient(135deg, #1877f2, #0b4db8); }
-.icon.tt { background: linear-gradient(135deg, #111, #ff0050 140%); }
-.icon.ig { background: linear-gradient(135deg, #feda75, #d62976 55%, #4f5bd5); }
+.icon i { font-size: 3rem; line-height: 1; display: inline-block; transition: transform 0.3s, color 0.3s, text-shadow 0.3s; }
+.card:hover .icon i { color: var(--p1); transform: scale(1.12) rotate(-6deg); text-shadow: 0 0 22px rgba(255, 31, 61, 0.7); }
 
 .contact-card { padding: 2rem 1.6rem; display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; }
 .mail { font-size: clamp(1.05rem, 4vw, 1.5rem); font-weight: 600; word-break: break-all; border-bottom: 2px solid var(--p2); transition: color 0.25s; }
@@ -247,5 +245,5 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
-    }
-    
+  }
+              
