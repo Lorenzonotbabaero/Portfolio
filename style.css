@@ -318,4 +318,7 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
 .contact-links { margin-top: 1.2rem; color: var(--muted); display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
 .contact-links a { border-bottom: 1px solid var(--p2); transition: color 0.25s; }
 .contact-links a:hover { color: var(--p3); }
-  
+
+.msg-link { color: #fff; font-weight: 600; background: linear-gradient(135deg, #ff1f3d, #b00020) !important; border-radius: 999px !important; padding: 0.6rem 1.1rem; transition: transform 0.2s, box-shadow 0.25s; }
+.msg-link i { margin-right: 0.35rem; }
+.msg-link:hover { transform: scale(1.04); box-shadow: 0 0 22px rgba(255, 31, 61, 0.55); }
