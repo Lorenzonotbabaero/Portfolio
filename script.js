@@ -129,20 +129,20 @@ document.querySelectorAll(".tilt").forEach((card) => {
       if (d.y < 0 || d.y > h) d.vy *= -1;
       ctx.beginPath();
       ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(190, 170, 255, 0.7)";
+      ctx.fillStyle = "rgba(255, 120, 120, 0.7)";
       ctx.fill();
       for (let j = i + 1; j < dots.length; j++) {
         const o = dots[j];
         const dist = Math.hypot(d.x - o.x, d.y - o.y);
         if (dist < 120) {
-          ctx.strokeStyle = `rgba(139, 92, 246, ${0.18 * (1 - dist / 120)})`;
+          ctx.strokeStyle = `rgba(255, 31, 61, ${0.18 * (1 - dist / 120)})`;
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(o.x, o.y); ctx.stroke();
         }
       }
       const md = Math.hypot(d.x - mouse.x, d.y - mouse.y);
       if (md < 150) {
-        ctx.strokeStyle = `rgba(34, 211, 238, ${0.35 * (1 - md / 150)})`;
+        ctx.strokeStyle = `rgba(255, 216, 74, ${0.35 * (1 - md / 150)})`;
         ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
       }
     }
@@ -150,3 +150,4 @@ document.querySelectorAll(".tilt").forEach((card) => {
   }
   frame();
 })();
+       
