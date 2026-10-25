@@ -30,7 +30,16 @@ function setPlaying(on) {
   musicBtn.classList.toggle("muted", !on);
 }
 
-if (bgv) bgv.play().catch(() => {});
+if (bgv) {
+  bgv.muted = true;
+  const kick = () => { if (bgv.paused) bgv.play().catch(() => {}); };
+  kick();
+  ["touchstart", "pointerdown", "click", "scroll"].forEach((ev) =>
+    addEventListener(ev, kick, { passive: true, once: ev !== "scroll" }));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) kick(); });
+  bgv.addEventListener("stalled", kick);
+  bgv.addEventListener("pause", () => { if (!document.hidden) setTimeout(kick, 300); });
+}
 
 enterBtn.addEventListener("click", () => {
   if (bgv) bgv.play().catch(() => {});
@@ -113,7 +122,7 @@ document.querySelectorAll(".tilt").forEach((card) => {
   function resize() {
     w = canvas.width = innerWidth;
     h = canvas.height = innerHeight;
-    const n = Math.min(90, Math.floor((w * h) / 17000));
+    const n = Math.min(38, Math.floor((w * h) / 26000));
     dots = Array.from({ length: n }, () => ({
       x: Math.random() * w, y: Math.random() * h,
       vx: (Math.random() - 0.5) * 0.35, vy: (Math.random() - 0.5) * 0.35,
@@ -125,6 +134,7 @@ document.querySelectorAll(".tilt").forEach((card) => {
   resize();
 
   function frame() {
+    if (document.hidden) { requestAnimationFrame(frame); return; }
     ctx.clearRect(0, 0, w, h);
     for (let i = 0; i < dots.length; i++) {
       const d = dots[i];
@@ -138,8 +148,8 @@ document.querySelectorAll(".tilt").forEach((card) => {
       for (let j = i + 1; j < dots.length; j++) {
         const o = dots[j];
         const dist = Math.hypot(d.x - o.x, d.y - o.y);
-        if (dist < 120) {
-          ctx.strokeStyle = `rgba(255, 31, 61, ${0.18 * (1 - dist / 120)})`;
+        if (dist < 100) {
+          ctx.strokeStyle = `rgba(255, 31, 61, ${0.18 * (1 - dist / 100)})`;
           ctx.lineWidth = 1;
           ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(o.x, o.y); ctx.stroke();
         }
@@ -154,4 +164,4 @@ document.querySelectorAll(".tilt").forEach((card) => {
   }
   frame();
 })();
-       
+     
