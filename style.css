@@ -221,4 +221,5 @@ footer { position: relative; z-index: 3; text-align: center; color: var(--muted)
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
-}
+  }
+  
