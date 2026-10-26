@@ -166,6 +166,7 @@ document.querySelectorAll(".tilt").forEach((card) => {
 })();
 
 
+
 /* ---------- Chat (DM style contact, answers come from response.json) ---------- */
 (function () {
   const IG_DM = "https://ig.me/m/lor.zxa";
@@ -191,10 +192,11 @@ document.querySelectorAll(".tilt").forEach((card) => {
       action: "copy_ig"
     }
   };
+  let ruleIdx = null, packIdx = null;
 
   const ready = fetch("response.json?v=" + Date.now(), { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : Promise.reject()))
-    .then((j) => { if (j && Array.isArray(j.rules)) data = j; })
+    .then((j) => { if (j && Array.isArray(j.rules)) { data = j; ruleIdx = packIdx = null; } })
     .catch(() => {});
 
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -244,66 +246,221 @@ document.querySelectorAll(".tilt").forEach((card) => {
     scrollDown();
   }
 
-  /* ---- keyword matching ---- */
+  /* ---------- text helpers ---------- */
   const normalize = (s) =>
-    " " + s.toLowerCase().replace(/[^\p{L}\p{N}\s']/gu, " ").replace(/\s+/g, " ").trim() + " ";
-
+    String(s).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "")
+      .replace(/['’`]/g, "").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
   const esc = (s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+  const rnd = (n) => Math.floor(Math.random() * n);
+  const pick = (a) => a[rnd(a.length)];
 
-  function keywordScore(text, kw) {
-    kw = kw.toLowerCase().trim();
-    if (!kw) return 0;
-    const pattern = esc(kw).replace(/\*/g, "\\p{L}*");
-    const re = new RegExp("\\s" + pattern + "\\s", "u");
-    if (!re.test(text)) return 0;
-    return kw.split(/\s+/).length * 10 + Math.min(kw.length, 9);
+  /* ---------- rule index (keywords) ---------- */
+  function buildRules() {
+    const exact = new Map(), wild = [];
+    let maxWords = 1;
+    data.rules.forEach((rule, ri) => {
+      for (const kw of rule.keywords || []) {
+        if (kw.indexOf("*") >= 0) {
+          const parts = kw.toLowerCase().split("*").map(normalize);
+          const flat = parts.join(" ").trim();
+          if (!flat) continue;
+          wild.push({
+            ri,
+            re: new RegExp("(?:^| )" + parts.map(esc).join("\\p{L}*") + "(?: |$)", "u"),
+            score: flat.split(" ").length * 10 + Math.min(flat.length, 9)
+          });
+        } else {
+          const k = normalize(kw);
+          if (!k) continue;
+          const w = k.split(" ").length;
+          if (w > maxWords) maxWords = w;
+          if (!exact.has(k)) exact.set(k, []);
+          exact.get(k).push(ri);
+        }
+      }
+    });
+    return { exact, wild, maxWords };
   }
 
-  function findReply(message) {
-    const text = normalize(message);
+  function scoreRules(text, tokens) {
+    if (!ruleIdx) ruleIdx = buildRules();
+    const scores = new Map(), seen = new Set();
+    const add = (ri, s) => scores.set(ri, (scores.get(ri) || 0) + s);
+    const top = Math.min(ruleIdx.maxWords, tokens.length);
+    for (let n = top; n >= 1; n--) {
+      for (let i = 0; i + n <= tokens.length; i++) {
+        const key = tokens.slice(i, i + n).join(" ");
+        if (seen.has(key)) continue;
+        const list = ruleIdx.exact.get(key);
+        if (!list) continue;
+        seen.add(key);
+        const s = n * 10 + Math.min(key.length, 9);
+        for (const ri of list) add(ri, s);
+      }
+    }
+    for (const w of ruleIdx.wild) if (w.re.test(text)) add(w.ri, w.score);
+    let best = -1, bestScore = 0, prio = -1;
+    for (const [ri, s] of scores) {
+      if (data.rules[ri].priority) { if (prio < 0 || s > scores.get(prio)) prio = ri; }
+      if (s > bestScore || (s === bestScore && ri < best)) { best = ri; bestScore = s; }
+    }
+    return { best, bestScore, prio };
+  }
+
+  /* ---------- knowledge packs ---------- */
+  function buildPacks() {
+    const map = new Map();
+    let maxWords = 1;
+    const packs = data.packs || {};
+    for (const name of Object.keys(packs)) {
+      const p = packs[name];
+      p._cue = (p.cue || []).map(normalize).filter(Boolean);
+      p._xcue = (p.xcue || p.cue || []).map(normalize).filter(Boolean);
+      p.items.forEach((it, ii) => {
+        const reg = (list, x) => {
+          for (const k of list) {
+            const w = k.split(" ").length;
+            if (w > maxWords) maxWords = w;
+            let arr = map.get(k);
+            if (!arr) map.set(k, (arr = []));
+            arr.push({ p, ii, x });
+          }
+        };
+        reg(it[0], false);
+        reg(it[1], true);
+      });
+    }
+    return { map, maxWords };
+  }
+
+  const LEAD = new Set("what whats is are a an the does do did define definition explain tell me about please pls po who was whos ano ang yung ng ba can you could would i want to know meaning of give show how".split(" "));
+  const TRAIL = new Set("mean means meaning stand stands for do does is are po please pls ba used".split(" "));
+  const NOUNS = new Set("tag tags property properties command commands keyword element elements symbol symbols file files extension format key shortcut port".split(" "));
+
+  function soloCandidates(tokens) {
+    let a = 0, b = tokens.length;
+    while (a < b && LEAD.has(tokens[a])) a++;
+    while (b > a && TRAIL.has(tokens[b - 1])) b--;
+    const base = tokens.slice(a, b);
+    const out = [base.join(" ")];
+    let c = base.length;
+    while (c > 1 && NOUNS.has(base[c - 1])) c--;
+    if (c !== base.length) out.push(base.slice(0, c).join(" "));
+    let d = 0;
+    while (d < base.length - 1 && NOUNS.has(base[d])) d++;
+    if (d) out.push(base.slice(d).join(" "));
+    return out.filter(Boolean);
+  }
+
+  function lookupPacks(text, tokens) {
+    if (!data.packs) return null;
+    if (!packIdx) packIdx = buildPacks();
+    const solos = soloCandidates(tokens);
+    const padded = " " + text + " ";
+    const cueCache = new Map();
+    const hasCue = (p, x) => {
+      const list = x ? p._xcue : p._cue;
+      const ck = (x ? "x" : "n") + list.join("|");
+      if (cueCache.has(ck)) return cueCache.get(ck);
+      const r = list.some((c) => padded.indexOf(" " + c + " ") >= 0);
+      cueCache.set(ck, r);
+      return r;
+    };
     let best = null, bestScore = 0;
-    for (const rule of data.rules) {
-      let score = 0;
-      for (const kw of rule.keywords || []) score += keywordScore(text, kw);
-      if (score > bestScore) { best = rule; bestScore = score; }
+    const top = Math.min(packIdx.maxWords, tokens.length);
+    for (let n = top; n >= 1; n--) {
+      for (let i = 0; i + n <= tokens.length; i++) {
+        const key = tokens.slice(i, i + n).join(" ");
+        const hits = packIdx.map.get(key);
+        if (!hits) continue;
+        const isSolo = solos.indexOf(key) >= 0;
+        
+        for (const h of hits) {
+          if (n === 1 && key.length <= 2 && /\D/.test(key) && !h.x && !isSolo) continue;
+          const ok = h.p.any || hasCue(h.p, h.x) || (isSolo && !h.x);
+          if (!ok) continue;
+          const s = n * 10 + Math.min(key.length, 9) + 5 + (isSolo ? 10 : 0) + (h.x ? 3 : 0);
+          if (s > bestScore) { bestScore = s; best = h; }
+        }
+      }
     }
-    return best || data.fallback;
+    return best ? { score: bestScore, replies: [best.p.items[best.ii][2]] } : null;
   }
 
-  let busy = false;
-  async function send(message) {
-    message = message.trim();
-    if (!message || busy) return;
-    busy = true;
-    bubble(message, "me");
-    input.value = "";
-    const rule = findReply(message);
-    const copyPromise = rule.action === "copy_ig" ? copyText(message) : null;
-    for (const line of rule.replies || []) await botSay(line);
-    if (copyPromise) {
-      const ok = await copyPromise;
-      if (ok) await botSay("Your message has been copied. Please paste it after opening my Instagram DM.");
+  /* ---------- dynamic answers (math, time, dice, converters) ---------- */
+  function fmtNum(v) {
+    if (!isFinite(v)) return null;
+    const r = Math.round(v * 1e10) / 1e10;
+    return r.toLocaleString("en-US", { maximumFractionDigits: 10 });
+  }
+
+  function mathReply(raw) {
+    let s = raw.toLowerCase().replace(/(\d),(?=\d{3}(\D|$))/g, "$1").replace(/[?=!]/g, " ");
+    if (/\d+\s*[-\/.]\s*\d+\s*[-\/]\s*\d+/.test(s)) return null;
+    s = s.replace(/\b(what is|whats|what's|calculate|compute|solve|how much is|how many is|find|evaluate|answer of|answer|equals?|result of|tell me|please|pls|the|value of|ano ang|magkano ang|ilan ang|is)\b/g, " ")
+      .replace(/\b(?:square root of|sqrt of|root of)\b/g, " sqrt ")
+      .replace(/(\d+(?:\.\d+)?)\s*(?:percent|%)\s*of\s*(\d+(?:\.\d+)?)/g, "($1/100*$2)")
+      .replace(/(\d+(?:\.\d+)?)\s*squared\b/g, "($1^2)")
+      .replace(/(\d+(?:\.\d+)?)\s*cubed\b/g, "($1^3)")
+      .replace(/\b(?:plus|added to|add)\b/g, "+")
+      .replace(/\b(?:minus|subtract|less)\b/g, "-")
+      .replace(/\b(?:times|multiplied by|multiply by|multiplied)\b/g, "*")
+      .replace(/(\d)\s*x\s*(\d)/g, "$1*$2")
+      .replace(/\b(?:divided by|divide by|over)\b/g, "/")
+      .replace(/\b(?:to the power of|power of|raised to)\b/g, "^")
+      .replace(/×/g, "*").replace(/÷/g, "/");
+    const tokRe = /\d+(?:\.\d+)?|sqrt|[+\-*\/^()%]/g;
+    if (s.replace(tokRe, "").trim() !== "") return null;
+    const toks = s.match(tokRe) || [];
+    if (!toks.some((t) => /\d/.test(t))) return null;
+    if (!toks.some((t) => /^(?:[+\-*\/^%]|sqrt)$/.test(t))) return null;
+    let pos = 0, err = null;
+    const peek = () => toks[pos];
+    function expr() { let v = term(); while (peek() === "+" || peek() === "-") { const o = toks[pos++]; const r = term(); v = o === "+" ? v + r : v - r; } return v; }
+    function term() { let v = pw(); while (peek() === "*" || peek() === "/") { const o = toks[pos++]; const r = pw(); if (o === "/" && r === 0) err = "zero"; v = o === "*" ? v * r : v / r; } return v; }
+    function pw() { const b = un(); if (peek() === "^") { pos++; return Math.pow(b, pw()); } return b; }
+    function un() { if (peek() === "-") { pos++; return -un(); } if (peek() === "+") { pos++; return un(); } return atom(); }
+    function atom() {
+      const t = toks[pos++];
+      if (t === undefined) { err = "bad"; return 0; }
+      if (t === "(") { const v = expr(); if (peek() === ")") pos++; else err = "bad"; return v; }
+      if (t === "sqrt") { const v = atom(); if (v < 0) err = "neg"; return Math.sqrt(v); }
+      if (/^\d/.test(t)) { let v = parseFloat(t); while (peek() === "%") { pos++; v /= 100; } return v; }
+      err = "bad"; return 0;
     }
-    if (rule.action === "ig" || rule.action === "copy_ig") igLink();
-    busy = false;
+    let v;
+    try { v = expr(); } catch (e) { return null; }
+    if (err === "zero") return ["I cannot divide by zero. 😅"];
+    if (err === "neg") return ["I cannot take the square root of a negative number here."];
+    if (err || pos < toks.length) return null;
+    const out = fmtNum(v);
+    return out === null ? null : ["The answer is " + out + ". 🧮"];
   }
 
-  form.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
-  chips.addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (b) send(b.dataset.msg || b.textContent);
-  });
+  const UNITS = (() => {
+    const u = {}, add = (type, names, f) => names.split(" ").forEach((n) => (u[n] = { type, f }));
+    add("len", "m meter meters metre metres", 1); add("len", "km kilometer kilometers kilometre kilometres", 1000);
+    add("len", "mi mile miles", 1609.344); add("len", "ft foot feet", 0.3048); add("len", "cm centimeter centimeters", 0.01);
+    add("len", "mm millimeter millimeters", 0.001); add("len", "in inch inches", 0.0254); add("len", "yd yard yards", 0.9144);
+    add("mass", "kg kilogram kilograms kilo kilos", 1); add("mass", "g gram grams", 0.001);
+    add("mass", "lb lbs pound pounds", 0.45359237); add("mass", "oz ounce ounces", 0.028349523);
+    add("vol", "l liter liters litre litres", 1); add("vol", "ml milliliter milliliters", 0.001); add("vol", "gal gallon gallons", 3.785411784);
+    add("temp", "c celsius", 0); add("temp", "f fahrenheit", 0); add("temp", "k kelvin", 0);
+    return u;
+  })();
+  const UNIT_NAME = { m: "meters", km: "kilometers", mi: "miles", ft: "feet", cm: "centimeters", mm: "millimeters", in: "inches", yd: "yards", kg: "kilograms", g: "grams", lb: "pounds", oz: "ounces", l: "liters", ml: "milliliters", gal: "gallons", c: "°C", f: "°F", k: "K" };
+  const canon = (n) => ({ meter: "m", meters: "m", metre: "m", metres: "m", kilometer: "km", kilometers: "km", kilometre: "km", kilometres: "km", mile: "mi", miles: "mi", foot: "ft", feet: "ft", centimeter: "cm", centimeters: "cm", millimeter: "mm", millimeters: "mm", inch: "in", inches: "in", yard: "yd", yards: "yd", kilogram: "kg", kilograms: "kg", kilo: "kg", kilos: "kg", gram: "g", grams: "g", lbs: "lb", pound: "lb", pounds: "lb", ounce: "oz", ounces: "oz", liter: "l", liters: "l", litre: "l", litres: "l", milliliter: "ml", milliliters: "ml", gallon: "gal", gallons: "gal", celsius: "c", fahrenheit: "f", kelvin: "k" }[n] || n);
 
-  let greeted = false;
-  async function greet() {
-    if (greeted) return;
-    greeted = true;
-    await ready;
-    for (const line of data.welcome || []) await botSay(line);
-  }
-
-  new IntersectionObserver((entries, io) => {
-    if (entries.some((e) => e.isIntersecting)) { greet(); io.disconnect(); }
-  }, { threshold: 0.3 }).observe(body);
-})();
-     
+  function unitReply(raw) {
+    const m = raw.toLowerCase().replace(/(\d),(?=\d{3})/g, "$1").match(/(-?\d+(?:\.\d+)?)\s*°?\s*([a-z]+)\s*(?:to|in|into|=|as)\s*°?\s*([a-z]+)/);
+    if (!m) return null;
+    const val = parseFloat(m[1]), a = UNITS[m[2]], b = UNITS[m[3]];
+    if (!a || !b || a.type !== b.type) return null;
+    const ca = canon(m[2]), cb = canon(m[3]);
+    let out;
+    if (a.type === "temp") {
+      let c = ca === "c" ? val : ca === "f" ? (val - 32) * 5 / 9 : val - 273.15;
+      out = cb === "c" ? c : cb === "f" ? c * 9 / 5 + 32 : c + 273.15;
+    } else out = val * a.f / b.f;
+    const r = fmtNum(out);
+    return r === null ? null : [fmtNum(val) + " " + (UNIT_NAME[ca] || m[2]) + " is about " + r + " " + (UNIT_NAME[cb] || m[3]) + ". 📏"
