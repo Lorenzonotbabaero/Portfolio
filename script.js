@@ -4,8 +4,9 @@
    Example: if your file is "lofi.mp3" ->  "Files/SoundS/lofi.mp3"
    NOTE: Render is case-sensitive, so "SoundS" must match exactly.
    ============================================================ */
+window.__lbJs = true;
 const MUSIC_SRC = "Files/SoundS/Background.mp3";
-const MUSIC_VOLUME = 0.5; // 0 to 1
+const MUSIC_VOLUME = 1; // 0 to 1
 
 const roles = [
   "Beginner web developer",
@@ -460,4 +461,4 @@ document.querySelectorAll(".tilt").forEach((card) => {
     const ca = canon(m[2]), cb = canon(m[3]);
     let out;
     if (a.type === "temp") {
-      let c = ca === "c" ? val : ca === "f" ? (val - 32) * 5 / 9 : val - 273.15
+      let c = ca === "c" ? val : ca === "f" ? (val - 32) 
