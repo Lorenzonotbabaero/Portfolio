@@ -21,13 +21,12 @@ const musicBtn = document.getElementById("musicBtn");
 const splash = document.getElementById("splash");
 const enterBtn = document.getElementById("enterBtn");
 
-bgm.src = MUSIC_SRC;
-bgm.volume = MUSIC_VOLUME;
+if (bgm) { bgm.src = MUSIC_SRC; bgm.volume = MUSIC_VOLUME; }
 document.body.classList.add("locked");
-musicBtn.classList.add("muted");
+if (musicBtn) musicBtn.classList.add("muted");
 
 function setPlaying(on) {
-  musicBtn.classList.toggle("muted", !on);
+  if (musicBtn) musicBtn.classList.toggle("muted", !on);
 }
 
 if (bgv) {
@@ -41,17 +40,19 @@ if (bgv) {
   bgv.addEventListener("pause", () => { if (!document.hidden) setTimeout(kick, 300); });
 }
 
-enterBtn.addEventListener("click", () => {
-  if (bgv) bgv.play().catch(() => {});
-  bgm.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-  splash.classList.add("hide");
+if (enterBtn) enterBtn.addEventListener("click", () => {
+  /* close the splash first, so it can never get stuck */
+  if (splash) splash.classList.add("hide");
   document.body.classList.remove("locked");
-  setTimeout(() => splash.remove(), 1000);
-  startReveal();
-  typeLoop();
+  setTimeout(() => { if (splash) splash.remove(); }, 1000);
+  try { if (bgv) bgv.play().catch(() => {}); } catch (e) {}
+  try { if (bgm) bgm.play().then(() => setPlaying(true)).catch(() => setPlaying(false)); } catch (e) {}
+  try { startReveal(); } catch (e) {}
+  try { typeLoop(); } catch (e) {}
 });
 
-musicBtn.addEventListener("click", () => {
+if (musicBtn) musicBtn.addEventListener("click", () => {
+  if (!bgm) return;
   if (bgm.paused) {
     bgm.play().then(() => setPlaying(true)).catch(() => {});
   } else {
@@ -459,8 +460,4 @@ document.querySelectorAll(".tilt").forEach((card) => {
     const ca = canon(m[2]), cb = canon(m[3]);
     let out;
     if (a.type === "temp") {
-      let c = ca === "c" ? val : ca === "f" ? (val - 32) * 5 / 9 : val - 273.15;
-      out = cb === "c" ? c : cb === "f" ? c * 9 / 5 + 32 : c + 273.15;
-    } else out = val * a.f / b.f;
-    const r = fmtNum(out);
-    return r === null ? null : [fmtNum(val) + " " + (UNIT_NAME[ca] || m[2]) + " is about " + r + " " + (UNIT_NAME[cb] || m[3]) + ". 📏"
+      let c = ca === "c" ? val : ca === "f" ? (val - 32) * 5 / 9 : val - 273.15
