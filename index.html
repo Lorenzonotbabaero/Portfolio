@@ -172,7 +172,19 @@
     <p>© 2026 Lorenzo Badilla</p>
   </footer>
 
-  <script src="script.js?v=21"></script>
+  <!-- Backup: the Enter button always closes the splash, even if script.js fails to load -->
+  <script>
+    (function () {
+      var b = document.getElementById("enterBtn"), s = document.getElementById("splash");
+      if (!b || !s) return;
+      b.addEventListener("click", function () {
+        s.classList.add("hide");
+        document.body.classList.remove("locked");
+        setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 1000);
+      });
+    })();
+  </script>
+  <script src="script.js?v=22"></script>
 </body>
-    </html>
-  
+  </html>
+            
