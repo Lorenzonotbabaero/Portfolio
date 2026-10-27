@@ -461,4 +461,4 @@ document.querySelectorAll(".tilt").forEach((card) => {
     const ca = canon(m[2]), cb = canon(m[3]);
     let out;
     if (a.type === "temp") {
-      let c = ca === "c" ? val : ca === "f" ? (val - 32) 
+      let c = ca === "c" ? val : ca === "f" ? (val - 32) * 
