@@ -181,10 +181,18 @@
         s.classList.add("hide");
         document.body.classList.remove("locked");
         setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 1000);
+        /* if script.js did not run, still show the page content */
+        setTimeout(function () {
+          if (window.__lbJs) return;
+          var r = document.querySelectorAll(".reveal");
+          for (var i = 0; i < r.length; i++) r[i].classList.add("show");
+          var v = document.getElementById("bgv"); if (v) { v.muted = true; try { v.play(); } catch (e) {} }
+          var t = document.getElementById("typed"); if (t && !t.textContent) t.textContent = "Beginner web developer";
+        }, 400);
       });
     })();
   </script>
-  <script src="script.js?v=22"></script>
+  <script src="script.js?v=23"></script>
 </body>
-  </html>
-            
+        </html>
+    
